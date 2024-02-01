@@ -11,5 +11,5 @@ Please cite [[1](#citation)] in your work when using this code in your experimen
 # Citation
 [1] 
 
-# bib tex
+# bibtex
 ```
