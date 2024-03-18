@@ -10,23 +10,6 @@ from utils.data import *
 torch.set_float32_matmul_precision('high')
 
 
-class ResBlock(nn.Module):
-    def __init__(self, in_channel, channel):
-        super().__init__()
-
-        self.conv = nn.Sequential(
-            nn.ReLU(),
-            nn.Conv2d(in_channel, channel, 3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(channel, in_channel, 1),
-        )
-
-    def forward(self, input):
-        out = self.conv(input)
-        out += input
-
-        return out
-    
 
 def MMD(x, y, device, kernel="multiscale"):
     """Emprical maximum mean discrepancy. The lower the result

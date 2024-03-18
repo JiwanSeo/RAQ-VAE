@@ -25,10 +25,10 @@ def parse_args():
     parser.add_argument('--n_epochs', type=int, default=500, help='number of training epochs')
     parser.add_argument('--lr', type=int, default=5e-4, help='learning rate')
     parser.add_argument('--seed', type=int, default=0, help='training seed: 10, 42, 170, 682')
-    parser.add_argument('--cuda_ind', type=int, default=0,  help='index for cuda device')
+    parser.add_argument('--cuda_ind', type=int, default=3,  help='index for cuda device')
 
     # KMVQ options
-    parser.add_argument('--cluster_target', type=int, default=128, help='Codebook clustering taget')
+    parser.add_argument('--cluster_target', type=int, default=1024, help='Codebook clustering taget')
     parser.add_argument('--max_iter', type=int, default=200, help='number of dkm iterations')
     parser.add_argument('--epsilon', type=int, default=1e-8, help='epsilon for softmax function')
     parser.add_argument('--temp', type=int, default=1e-2, help='Softmax temperature of DKM')
@@ -38,7 +38,7 @@ def parse_args():
                         help="minimum vocabulary size; number of possible discrete states")
     parser.add_argument("--num_embeddings_max", type=int, default=2048,
                         help="maximum vocabulary size; number of possible discrete states")
-    parser.add_argument("--num_embeddings_test", type=int, default=2048,
+    parser.add_argument("--num_embeddings_test", type=int, default=256,
                         help="Test vocabulary size; number of possible discrete states")
 
     # directory for FID

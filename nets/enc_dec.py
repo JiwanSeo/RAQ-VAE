@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from utils.funcs import ResBlock
+from nets.blocks import ResBlock
 
 
 class Encoder(nn.Module):

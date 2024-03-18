@@ -3,6 +3,7 @@ from lightning.pytorch import LightningModule
 from nets.enc_dec import *
 from nets.quantizer import *
 from nets.cbk2cbk import *
+from nets.blocks import PixelSNAIL
 from utils.funcs import *
 import torch
 import torch.nn as nn
@@ -295,7 +296,7 @@ class PixelSNAIL_ONE(LightningModule):
         self.bottom = PixelSNAIL(attention=False, input_channels=n_codes, n_codes=n_codes,
                                  n_filters=n_filters, n_res_blocks=n_res_blocks,
                                  n_snail_blocks=n_snail_blocks)
-        self.vqvae = VRVQ.load_from_checkpoint("saved_model/vrvq/" + str(args.dataset)
+        self.vqvae = VRVQ.load_from_checkpoint("../saved_model/vrvq/" + str(args.dataset)
                                            +  "/base_voca" + str(args.num_embeddings)
                                            + "/seed" + str(args.seed) + '/model.ckpt'
                                            , args=args)
