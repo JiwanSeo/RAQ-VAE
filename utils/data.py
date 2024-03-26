@@ -183,4 +183,5 @@ class CELEBAData(pl.LightningDataModule):
             ]
         )
         dataset = CelebA(root=self.data_dir, split='test', transform=transform, download=True)
+
         return dataset

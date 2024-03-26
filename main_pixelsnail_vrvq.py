@@ -47,16 +47,22 @@ def main():
     val_loader = data.val_dataloader()
     test_loader = data.test_dataloader()
 
-    model = PixelSNAIL_ONE(n_codes=args.num_embeddings_test, n_filters=128, n_res_blocks=10, n_snail_blocks=3, n_condition_blocks=5, args=args).to(device)
+    vq_model = VRVQ.load_from_checkpoint("../saved_model/vrvq/" + str(args.dataset)
+                                         + "/base_voca" + str(args.num_embeddings)
+                                         + "/seed" + str(args.seed) + '/model.ckpt'
+                                         , args=args)
+
+    model = PixelSNAIL_VRVQ(n_codes=args.num_embeddings_test, n_filters=128, n_res_blocks=10, n_snail_blocks=3, n_condition_blocks=5, vq_model=vq_model, args=args).to(device)
+
     logger = TensorBoardLogger(save_dir=args.save_dir + "pixelsnail/" + str(args.dataset)
                                         + "/base_voca_:" + str(args.num_embeddings)
-                                        + "/" + str(args.num_embeddings_min) + "_to_" + str(args.num_embeddings_max),
+                                        + "/" + "to_" + str(args.num_embeddings_test),
                                name="base",
                                version=args.seed)
 
-    checkpoint_callback = ModelCheckpoint(monitor='val_SSIM',
+    checkpoint_callback = ModelCheckpoint(monitor='val_recon_loss',
                                           save_weights_only=True,
-                                          save_top_k=10,
+                                          save_top_k=5,
                                           mode='min')
 
     trainer = Trainer(devices=[args.cuda_ind],
@@ -68,7 +74,13 @@ def main():
 
     trainer.fit(model, train_loader, val_loader)
 
-    best_model = PixelSNAIL_ONE.load_from_checkpoint(checkpoint_callback.best_model_path, args=args)
+    best_model = PixelSNAIL_VRVQ.load_from_checkpoint(checkpoint_callback.best_model_path,
+                                                      n_codes=args.num_embeddings_test,
+                                                      n_filters=128,
+                                                      n_res_blocks=10,
+                                                      n_snail_blocks=3,
+                                                      n_condition_blocks=5,
+                                                      vq_model=vq_model, args=args)
 
     trainer.test(best_model, test_loader)
 

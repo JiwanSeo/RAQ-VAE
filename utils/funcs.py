@@ -161,10 +161,6 @@ def eval_fid(model, args, model_type="kmvq"):
     # print(f'Saving {len(test_data)} {args.dataset} test images in {save_dir}......')
     data = {
         'cifar10': CIFAR10Data(args),
-        'cifar100': CIFAR100Data(args),
-        'SVHN': SVHNData(args),
-        'MNIST': MNISTData(args),
-        'FashionMNIST': FashionMNISTData(args),
         'CelebA': CELEBAData(args)
     }[args.dataset]
 

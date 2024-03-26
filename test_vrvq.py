@@ -55,7 +55,7 @@ def main():
                       max_epochs=args.n_epochs,
                       accelerator='gpu')
 
-    model = VRVQ.load_from_checkpoint("saved_model/vrvq/" + str(args.dataset)
+    model = VRVQ.load_from_checkpoint("../saved_model/vrvq/" + str(args.dataset)
                                       + "/base_voca" + str(args.num_embeddings)
                                       + "/seed" + str(args.seed) + '/model.ckpt'
                                       , args=args).to(device)

@@ -50,7 +50,7 @@ class KMEANVQ(LightningModule):
         x_hat = self.decode(quant)
         return x_hat, diff, ind
 
-    def clustering(self, x):
+    def forward_kmvq(self, x):
         enc = self.encoder(x)
         quant = self.quantize_conv(enc).permute(0, 2, 3, 1)
         
@@ -66,13 +66,15 @@ class KMEANVQ(LightningModule):
 
         # Inverse kmeans codebook clustering
         elif self.cluster_target > self.n_embed:
-            quant, diff, ind = self.quantize_cluster(z_e=quant, embed_weight=self.args.i_clustered_weight.to(self.device))
+            clustered_weight = self.args.i_clustered_weight.to(self.device)
+            quant, diff, ind = self.quantize_cluster(z_e=quant, embed_weight=clustered_weight)
         else:
+            clustered_weight = self.quantize.embed.weight
             quant, diff, ind = self.quantize(quant)
         quant = quant.permute(0, 3, 1, 2)
         diff = diff.unsqueeze(0)
         x_hat = self.decode(quant)
-        return x_hat, diff, ind
+        return x_hat, diff, ind, clustered_weight
 
     def training_step(self, train_batch, batch_idx):
         x = train_batch[0]
@@ -110,7 +112,7 @@ class KMEANVQ(LightningModule):
 
     def test_step(self, test_batch, batch_idx):
         x = test_batch[0]
-        x_hat, _, ind = self.clustering(x)
+        x_hat, _, ind, _ = self.forward_kmvq(x)
 
         recon_loss = self.criterion(x_hat, x)
         self.log('test_recon_loss', recon_loss, prog_bar=True)
@@ -135,8 +137,8 @@ class KMEANVQ(LightningModule):
         self.log('test_perplexity', perplexity, prog_bar=True)
         self.log('test_cluster_use', cluster_use, prog_bar=True)
 
-    def decode_latent(self, code):
-        quant = self.quantize.embed_code(code)
+    def decode_latent(self, code, weight):
+        quant = F.embedding(code, weight)
         quant = quant.permute(0, 3, 1, 2)
         dec = self.decode(quant)
         return dec
@@ -278,6 +280,7 @@ class VRVQ(LightningModule):
         self.log('test_perplexity', perplexity, prog_bar=True)
         self.log('test_cluster_use', cluster_use, prog_bar=True)
 
+
     def decode_latent(self, code, trg):
         quant = F.embedding(code, self.cbk2cbk(self.src.to(self.device), trg.to(self.device)).squeeze(1).to(self.device))
         quant = quant.permute(0, 3, 1, 2)
@@ -289,17 +292,14 @@ class VRVQ(LightningModule):
         return optimizer
 
 
-class PixelSNAIL_ONE(LightningModule):
-    def __init__(self, n_codes, n_filters, n_res_blocks, n_snail_blocks, n_condition_blocks, args):
+class PixelSNAIL_VRVQ(LightningModule):
+    def __init__(self, n_codes, n_filters, n_res_blocks, n_snail_blocks, n_condition_blocks, vq_model, args):
         super().__init__()
         self.args = args
         self.bottom = PixelSNAIL(attention=False, input_channels=n_codes, n_codes=n_codes,
                                  n_filters=n_filters, n_res_blocks=n_res_blocks,
                                  n_snail_blocks=n_snail_blocks)
-        self.vqvae = VRVQ.load_from_checkpoint("../saved_model/vrvq/" + str(args.dataset)
-                                           +  "/base_voca" + str(args.num_embeddings)
-                                           + "/seed" + str(args.seed) + '/model.ckpt'
-                                           , args=args)
+        self.vqvae = vq_model
         self.condition_stack = []
 
         for _ in range(n_condition_blocks):
@@ -315,9 +315,8 @@ class PixelSNAIL_ONE(LightningModule):
     
         self.criterion = nn.CrossEntropyLoss()
         self.recon_loss = nn.MSELoss()
-        self.n_embed_test = args.num_embeddings_test
+        self.n_embed_test = self.args.num_embeddings_test
     
-
     def forward(self, x):
         out = self.bottom(x)
         return out
@@ -326,44 +325,30 @@ class PixelSNAIL_ONE(LightningModule):
         return F.one_hot(input, num_classes=self.n_embed_test).permute(0, 3, 1, 2).type(torch.FloatTensor).to(self.device)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=5e-4)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-4)
         return optimizer
 
     def training_step(self, train_batch, batch_idx):
-        self.vqvae.eval()
         x = train_batch[0]
         trg_test = torch.arange(self.n_embed_test).unsqueeze(1)
         _, _, _, _, _, ind = self.vqvae.encode(x, trg_test)
-        
+
         code = self.to_one_hot(ind)
         out_pixel = self.forward(code)
         loss = self.criterion(out_pixel, ind)
         self.log('train_loss', loss, prog_bar=True)
 
         # ind_pixel = torch.argmax(out_pixel, dim=1)
-        # # in_bottom = train_batch
-        # # x = in_bottom.type(torch.FloatTensor).to(self.device)
-        # # y = torch.argmax(x, dim=1)
-        # # x_hat = self.forward(x)
-        # # loss = self.criterion(x_hat, y)
-        # # self.log('pixelcnn_train_loss', loss)
-        # # y_hat = torch.argmax(x_hat, dim=1)
-        # decoded_sample_before = self.vqvae.decode_latent(ind, trg_test)
+        # # decoded_sample_before = self.vqvae.decode_latent(ind, trg_test)
         # decoded_sample_after = self.vqvae.decode_latent(ind_pixel, trg_test)
         # 
-        # recon_loss = self.criterion(decoded_sample_after, decoded_sample_before)
+        # recon_loss = self.recon_loss(decoded_sample_after, x)
         # self.log('train_recon_loss', recon_loss, prog_bar=True)
-        # 
-        # psnr = 10 * torch.log10((1**2)/recon_loss)
-        # self.log('train_PSNR', psnr, prog_bar=True)
-        # 
-        # ms_ssim_val = ssim(decoded_sample_before, decoded_sample_after, data_range=1, size_average=True)
-        # self.log('train_SSIM', ms_ssim_val, prog_bar=True)
         # 
         # # log sampled images
         # tensorboard = self.logger.experiment
-        # grid = torchvision.utils.make_grid(decoded_sample_before)
-        # tensorboard.add_image('train_before pixel', grid, self.global_step)
+        # # grid = torchvision.utils.make_grid(x)
+        # # tensorboard.add_image('train_before pixel', grid, self.global_step)
         # grid = torchvision.utils.make_grid(decoded_sample_after)
         # tensorboard.add_image('train_after pixel', grid, self.global_step)
         return loss
@@ -380,38 +365,34 @@ class PixelSNAIL_ONE(LightningModule):
         ind_pixel = torch.argmax(out_pixel, dim=1)
         # decoded_sample_before = self.vqvae.decode_latent(ind, trg_test)
         decoded_sample_after = self.vqvae.decode_latent(ind_pixel, trg_test)
-        
-        recon_loss = self.criterion(decoded_sample_after, x)
+
+        # print("x_hat: ", decoded_sample_after, decoded_sample_after.size())
+        recon_loss = self.recon_loss(decoded_sample_after, x)
         self.log('val_recon_loss', recon_loss, prog_bar=True)
 
-        psnr = 10 * torch.log10((1**2)/recon_loss)
-        self.log('val_PSNR', psnr, prog_bar=True)
-
-        ms_ssim_val = ssim(x, decoded_sample_after, data_range=1, size_average=True)
-        self.log('val_SSIM', ms_ssim_val, prog_bar=True)
-        
-        # # log sampled images
-        # tensorboard = self.logger.experiment
-        # grid = torchvision.utils.make_grid(x)
-        # tensorboard.add_image('val_before pixel', grid, self.global_step)
-        # grid = torchvision.utils.make_grid(decoded_sample_after)
-        # tensorboard.add_image('val_after pixel', grid, self.global_step)
+        # log sampled images
+        tensorboard = self.logger.experiment
+        grid = torchvision.utils.make_grid(x)
+        tensorboard.add_image('val_before pixel', grid, self.global_step)
+        grid = torchvision.utils.make_grid(decoded_sample_after)
+        tensorboard.add_image('val_after pixel', grid, self.global_step)
         return loss
-    
+
     def test_step(self, test_batch, batch_idx):
         x = test_batch[0]
         trg_test = torch.arange(self.n_embed_test).unsqueeze(1)
-        _, _, _, _, _, ind = self.vqvae.encdoe(x, trg_test)
+        _, _, _, _, _, ind = self.vqvae.encode(x, trg_test)
+
         code = self.to_one_hot(ind)
         out_pixel = self.forward(code)
 
         loss = self.criterion(out_pixel, ind)
         self.log('test_loss', loss, prog_bar=True)
         ind_pixel = torch.argmax(out_pixel, dim=1)
-        decoded_sample_before = self.vqvae.decode_latent(ind, trg_test)
+        # decoded_sample_before = self.vqvae.decode_latent(ind, trg_test)
         decoded_sample_after = self.vqvae.decode_latent(ind_pixel, trg_test)
 
-        recon_loss = self.criterion(decoded_sample_after, x)
+        recon_loss = self.recon_loss(decoded_sample_after, x)
         self.log('test_recon_loss', recon_loss, prog_bar=True)
 
         psnr = 10 * torch.log10((1**2)/recon_loss)
@@ -422,7 +403,97 @@ class PixelSNAIL_ONE(LightningModule):
 
         # log sampled images
         tensorboard = self.logger.experiment
-        grid = torchvision.utils.make_grid(decoded_sample_before)
+        grid = torchvision.utils.make_grid(x)
+        tensorboard.add_image('test_before pixel', grid, self.global_step)
+        grid = torchvision.utils.make_grid(decoded_sample_after)
+        tensorboard.add_image('test_after pixel', grid, self.global_step)
+        return loss
+
+
+class PixelSNAIL_KMVQ(LightningModule):
+    def __init__(self, n_codes, n_filters, n_res_blocks, n_snail_blocks, n_condition_blocks, vq_model, args):
+        super().__init__()
+        self.args = args
+        self.bottom = PixelSNAIL(attention=False, input_channels=n_codes, n_codes=n_codes,
+                                 n_filters=n_filters, n_res_blocks=n_res_blocks,
+                                 n_snail_blocks=n_snail_blocks)
+        self.vqvae = vq_model
+        self.condition_stack = []
+
+        for _ in range(n_condition_blocks):
+            self.condition_stack.extend([
+                nn.Conv2d(in_channels=n_codes, out_channels=n_codes, kernel_size=3, padding=1),
+                nn.ELU(),
+                nn.Conv2d(in_channels=n_codes, out_channels=n_codes, kernel_size=3, padding=1)
+            ])
+
+        self.condition_stack = nn.ModuleList(
+            [nn.Conv2d(in_channels=n_codes, out_channels=n_codes, kernel_size=3, padding=1)
+             for _ in range(n_condition_blocks)])
+
+        self.criterion = nn.CrossEntropyLoss()
+        self.recon_loss = nn.MSELoss()
+        # DKM options
+        self.cluster_target = self.args.cluster_target
+
+    def forward(self, x):
+        out = self.bottom(x)
+        return out
+
+    def to_one_hot(self, input):
+        return F.one_hot(input, num_classes=self.cluster_target).permute(0, 3, 1, 2).type(torch.FloatTensor).to(self.device)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-4)
+        return optimizer
+
+    def training_step(self, train_batch, batch_idx):
+        x = train_batch[0]
+        _, _, ind, embed_weight = self.vqvae.forward_kmvq(x)
+        code = self.to_one_hot(ind)
+        out_pixel = self.forward(code)
+        loss = self.criterion(out_pixel, ind)
+        self.log('train_loss', loss, prog_bar=True)
+
+        # ind_pixel = torch.argmax(out_pixel, dim=1)
+        # # decoded_sample_before = self.vqvae.decode_latent(ind, trg_test)
+        # decoded_sample_after = self.vqvae.decode_latent(ind_pixel, trg_test)
+        #
+        # recon_loss = self.recon_loss(decoded_sample_after, x)
+        # self.log('train_recon_loss', recon_loss, prog_bar=True)
+        #
+        # # log sampled images
+        # tensorboard = self.logger.experiment
+        # # grid = torchvision.utils.make_grid(x)
+        # # tensorboard.add_image('train_before pixel', grid, self.global_step)
+        # grid = torchvision.utils.make_grid(decoded_sample_after)
+        # tensorboard.add_image('val_after pixel', grid, self.global_step)
+        return loss
+    
+    def test_step(self, test_batch, batch_idx):
+        x = test_batch[0]
+        _, _, ind, embed_weight = self.vqvae.forward_kmvq(x)
+        code = self.to_one_hot(ind)
+        out_pixel = self.forward(code)
+        loss = self.criterion(out_pixel, ind)
+
+        self.log('test_loss', loss, prog_bar=True)
+        ind_pixel = torch.argmax(out_pixel, dim=1)
+        # decoded_sample_before = self.vqvae.decode_latent(ind, trg_test)
+        decoded_sample_after = self.vqvae.decode_latent(ind_pixel, embed_weight)
+
+        recon_loss = self.recon_loss(decoded_sample_after, x)
+        self.log('test_recon_loss', recon_loss, prog_bar=True)
+
+        psnr = 10 * torch.log10((1**2)/recon_loss)
+        self.log('test_PSNR', psnr, prog_bar=True)
+
+        ms_ssim_val = ssim(x, decoded_sample_after, data_range=1, size_average=True)
+        self.log('test_SSIM', ms_ssim_val, prog_bar=True)
+
+        # log sampled images
+        tensorboard = self.logger.experiment
+        grid = torchvision.utils.make_grid(x)
         tensorboard.add_image('test_before pixel', grid, self.global_step)
         grid = torchvision.utils.make_grid(decoded_sample_after)
         tensorboard.add_image('test_after pixel', grid, self.global_step)
