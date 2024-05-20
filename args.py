@@ -27,13 +27,13 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=0, help='training seed: 10, 42, 170, 682')
     parser.add_argument('--cuda_ind', type=int, default=0,  help='index for cuda device')
 
-    # Model-based options
+    # KMVQ options
     parser.add_argument('--cluster_target', type=int, default=512, help='Codebook clustering taget')
     parser.add_argument('--max_iter', type=int, default=200, help='number of dkm iterations')
     parser.add_argument('--epsilon', type=int, default=1e-8, help='epsilon for softmax function')
     parser.add_argument('--temp', type=int, default=1e-2, help='Softmax temperature of DKM')
 
-    # Data-driven options
+    # VRVQ options
     parser.add_argument("--num_embeddings_min", type=int, default=32,
                         help="minimum vocabulary size; number of possible discrete states")
     parser.add_argument("--num_embeddings_max", type=int, default=2048,
