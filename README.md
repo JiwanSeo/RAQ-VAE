@@ -64,7 +64,7 @@ The evaluation script relies on the checkpoint saved during training. Make sure 
   - Options: `mb`, `dd`
   - Default: `mb`
 - `--model_type` (str): Model type to use.
-  - Options: `vqvae`, `vqvae2`, `vqgan`
+  - Options: `vqvae`, `vqvae2`, `vqgan` (to be updated)
   - Default: `vqvae`
 - `--num_embeddings` (int): Number of embeddings (vocabulary size).
   - Default: `256`
