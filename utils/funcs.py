@@ -113,12 +113,14 @@ def inverse_dkm(model, args):
     min_loss = float('inf')
     best_weigh_trg = None
     if args.cluster_target > 1000:
-        kernel = "rbf"
-        lr = 5e-4
-    else:
+        weight_decay = 0.05
         kernel = "multiscale"
         lr = 5e-3
-    optimizer = torch.optim.AdamW([weigh_trg], lr=lr)
+    else:
+        weight_decay = 0.01
+        kernel = "multiscale"
+        lr = 5e-3
+    optimizer = torch.optim.AdamW([weigh_trg], lr=lr, weight_decay=weight_decay)
 
     for i in range(5000):
         clustered_weight, cluster_weight_idx = dkm(weights=weigh_trg, k=args.num_embeddings, args=args)
@@ -152,16 +154,18 @@ def inverse_dkm(model, args):
     return best_weigh_trg
 
 
-def eval_fid(model, args, model_type="kmvq"):
+def eval_fid(model, args, model_type):
     model.eval()
     model = model.to(args.device)
     ######### source image (test)#########
     save_dir = args.save_dir + args.img_dir + args.dataset + '/src_test/'
     os.makedirs(save_dir, exist_ok=True)
-    # print(f'Saving {len(test_data)} {args.dataset} test images in {save_dir}......')
+    print(f'Saving {len(test_data)} {args.dataset} test images in {save_dir}......')
     data = {
         'cifar10': CIFAR10Data(args),
-        'CelebA': CELEBAData(args)
+        'CelebA': CELEBAData(args),
+        'CelebA_128': CELEBA128Data(args),
+        'ImageNet': ImageNetData(args)
     }[args.dataset]
 
     test_loader = data.test_dataloader()
@@ -175,22 +179,36 @@ def eval_fid(model, args, model_type="kmvq"):
 
     print(f'Saved {len(test_data)} {args.dataset} images in the directory {save_dir}.')
 
-    # print(f'Saving {len(test_data)} {args.dataset} generated images in {save_dir}......')
-    if model_type == "kmvq":
+    if model_type == "mb_vq":
         if args.cluster_target == args.num_embeddings:
-            save_dir = args.save_dir + args.img_dir + 'kmvq/' + args.dataset + '/voca' + str(args.num_embeddings) + "/seed" + str(args.seed) + '/'
+            save_dir = args.save_dir + args.img_dir + 'mb_vq/' + args.dataset + '/voca' + str(args.num_embeddings) + "/seed" + str(args.seed) + '/'
         else:
-            save_dir = args.save_dir + args.img_dir + 'kmvq/' + args.dataset + '/voca' + str(args.num_embeddings) + "_to_" + str(args.cluster_target) +  "/seed" + str(args.seed) + '/'
+            save_dir = args.save_dir + args.img_dir + 'mb_vq/' + args.dataset + '/voca' + str(args.num_embeddings) + "_to_" + str(args.cluster_target) +  "/seed" + str(args.seed) + '/'
         os.makedirs(save_dir, exist_ok=True)
         with torch.no_grad():
             for i, (image, label) in enumerate(test_loader):
                 x = image.to(args.device)
-                x_hat, _, _ = model.clustering(x)
+                x_hat, _, ind, _ = model.forward_clustering(x)
                 for j in range(x_hat.size(0)):
                     image = x_hat[j]
-                    file_path = os.path.join(save_dir, f'KMVQ_image_{i * args.batch_size_test + j}.png')
+                    file_path = os.path.join(save_dir, f'mb_vq_image_{i * args.batch_size_test + j}.png')
                     if not os.path.exists(file_path):
                         save_image(image, file_path, nrow=1)
+    if model_type == "mb_vq2":
+            if args.cluster_target == args.num_embeddings:
+                save_dir = args.save_dir + args.img_dir + 'mb_vq2/' + args.dataset + '/voca' + str(args.num_embeddings) + "/seed" + str(args.seed) + '/'
+            else:
+                save_dir = args.save_dir + args.img_dir + 'mb_vq2/' + args.dataset + '/voca' + str(args.num_embeddings) + "_to_" + str(args.cluster_target) +  "/seed" + str(args.seed) + '/'
+            os.makedirs(save_dir, exist_ok=True)
+            with torch.no_grad():
+                for i, (image, label) in enumerate(test_loader):
+                    x = image.to(args.device)
+                    x_hat, _, ind, _ = model.forward_clustering(x)
+                    for j in range(x_hat.size(0)):
+                        image = x_hat[j]
+                        file_path = os.path.join(save_dir, f'mb_vq2_image_{i * args.batch_size_test + j}.png')
+                        if not os.path.exists(file_path):
+                            save_image(image, file_path, nrow=1)
     elif model_type == "random":
         if args.cluster_target == args.num_embeddings:
             save_dir = args.save_dir + args.img_dir + 'random/' + args.dataset + '/voca' + str(args.num_embeddings) + "/seed" + str(args.seed) + '/'
@@ -200,14 +218,14 @@ def eval_fid(model, args, model_type="kmvq"):
         with torch.no_grad():
             for i, (image, label) in enumerate(test_loader):
                 x = image.to(args.device)
-                x_hat, _, _ = model.clustering(x)
+                x_hat, _, ind, _ = model.forward_clustering(x)
                 for j in range(x_hat.size(0)):
                     image = x_hat[j]
                     file_path = os.path.join(save_dir, f'random_image_{i * args.batch_size_test + j}.png')
                     if not os.path.exists(file_path):
                         save_image(image, file_path, nrow=1)
-    elif model_type == "vrvq":
-        save_dir = args.save_dir + args.img_dir + 'vrvq/' + args.dataset + '/voca' + str(args.num_embeddings) + "_to_" + str(args.num_embeddings_test) +  "/seed" + str(args.seed) + '/'
+    elif model_type == "dd_vq":
+        save_dir = args.save_dir + args.img_dir + 'DD_RAQ/' + args.dataset + '/voca' + str(args.num_embeddings) + "_to_" + str(args.num_embeddings_test) +  "/seed" + str(args.seed) + '/'
         os.makedirs(save_dir, exist_ok=True)
         with torch.no_grad():
             for i, (image, label) in enumerate(test_loader):
@@ -217,9 +235,23 @@ def eval_fid(model, args, model_type="kmvq"):
                 if args.num_embeddings == args.num_embeddings_test: x_hat_trg = x_hat_src
                 for j in range(x_hat_trg.size(0)):
                     image = x_hat_trg[j]
-                    file_path = os.path.join(save_dir, f'VRVQ_image_{i * args.batch_size_test + j}.png')
+                    file_path = os.path.join(save_dir, f'DD_RAQ_image_{i * args.batch_size_test + j}.png')
                     if not os.path.exists(file_path):
                         save_image(image, file_path, nrow=1)
+    elif model_type == "dd_vq2":
+            save_dir = args.save_dir + args.img_dir + 'dd_vq2/' + args.dataset + '/voca' + str(args.num_embeddings) + "_to_" + str(args.num_embeddings_test) +  "/seed" + str(args.seed) + '/'
+            os.makedirs(save_dir, exist_ok=True)
+            with torch.no_grad():
+                for i, (image, label) in enumerate(test_loader):
+                    x = image.to(args.device)
+                    trg_test = torch.arange(args.num_embeddings_test).unsqueeze(1).to(args.device)
+                    x_hat_src, _, _, _, x_hat_trg, _, _, _ = model(x, trg_test)
+                    if args.num_embeddings == args.num_embeddings_test: x_hat_trg = x_hat_src
+                    for j in range(x_hat_trg.size(0)):
+                        image = x_hat_trg[j]
+                        file_path = os.path.join(save_dir, f'DD_RAQ_image_{i * args.batch_size_test + j}.png')
+                        if not os.path.exists(file_path):
+                            save_image(image, file_path, nrow=1)
     print(f'Saved {len(test_data)} generated images in the directory {save_dir}.')
 
     ## Calculate FID

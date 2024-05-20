@@ -68,8 +68,9 @@ class CdBk2CdBk(nn.Module):
         
         input = self.embed_trg(trg[0])
         
+        # cross forcing
         teacher_forcing_ratio = 0.5
-        for t in range(0, trg_len): # <eos> 제외하고 trg_len-1 만큼 반복
+        for t in range(0, trg_len): 
             output, hidden, cell = self.decoder(input, hidden, cell)
             outputs[t] = output
         
