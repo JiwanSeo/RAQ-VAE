@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # VRVQ
 This repository contains the official PyTorch/Pytorch-Lightning implementation of **"VRVQ: Variable-Rate VQ-VAE via Codebook Representative Seq2Seq Model"** (**).
 ```
@@ -13,3 +14,7 @@ Please cite [[1](#citation)] in your work when using this code in your experimen
 
 # bibtex
 ```
+=======
+# RAQ-VAE
+RAQ-VAE: Rate-Adaptive Vector-Quantized Variational Autoencoder
+>>>>>>> origin/main
