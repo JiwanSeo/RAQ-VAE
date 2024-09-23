@@ -2,8 +2,6 @@
 This repository contains the official PyTorch/Pytorch-Lightning implementation of **"RAQ-VAE: Rate-Adaptive Vector-Quantized Variational Autoencoder"** [[arXiv](https://arxiv.org/abs/2405.14222)].
 
 
---
-
 
 ## Notice
 
@@ -14,6 +12,7 @@ We recommend using this code for reference or research purposes, but please proc
 If you have any questions, feel free to contact me at **jeewan0516@kaist.ac.kr**.
 
 
+
 ## Architectures and Hyperparameters
 
 The model architecture in this code is based on the conventional VQ-VAE framework outlined in the original VQ-VAE paper (van den Oord et al., 2017), with reference to the VQ-VAE-2 implementations available [here](https://github.com/mattiasxu/VQVAE-2), [here](https://github.com/rosinality/vq-vae-2-pytorch), and [here](https://github.com/EugenHotaj/pytorch-generative). We have used ConvResNets from these repositories, which consist of convolutional layers, transpose convolutional layers, and ResBlocks. 
@@ -22,7 +21,7 @@ Experiments were conducted on two setups: a server with 4 RTX 4090 GPUs and a ma
 
 RAQ-VAEs are constructed based on the described VQ-VAE parameters, with additional consideration of each parameter for adaptation.
 
----
+
 
 ## Requirements
 
@@ -31,6 +30,7 @@ Before running this project, make sure to set up your environment by following t
 Use the requirements.txt file to install all the necessary dependencies:
 
     pip install -r requirements.txt
+
 
 
 ## Trainig
@@ -46,6 +46,7 @@ Once you have set up your environment, you can run the training script. Below is
 - The script will save model checkpoints and logs to the specified save_dir.
 
 
+
 ## Evaluation
 
 After training the model, you can evaluate it using the test.py script. Below is an example command to run the evaluation:
@@ -58,7 +59,9 @@ The evaluation script relies on the checkpoint saved during training. Make sure 
 
 
 
+
 ## Command Line Arguments Guide
+
 
 
 ### Dataloader Related Arguments
