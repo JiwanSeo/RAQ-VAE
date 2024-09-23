@@ -1,9 +1,10 @@
 # RAQ-VAE
 This repository contains the official PyTorch/Pytorch-Lightning implementation of **"RAQ-VAE: Rate-Adaptive Vector-Quantized Variational Autoencoder"** [[arXiv](https://arxiv.org/abs/2405.14222)].
 
----
 
-+
+--
+
+
 ## Notice
 
 The code provided here corresponds to the version used in the paper submitted in May. Please note that this version is not fully optimized and may still contain bugs or incomplete features. While it is functional and should work as described in the paper, it may require additional debugging or refinement for specific use cases.
