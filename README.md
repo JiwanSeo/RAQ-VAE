@@ -4,6 +4,14 @@ This repository contains the official PyTorch/Pytorch-Lightning implementation o
 > **Abstract:**   Vector Quantized Variational AutoEncoder (VQ-VAE) is an established technique in machine learning for learning discrete representations across various modalities. However, its scalability and applicability are limited by the need to retrain the model to adjust the codebook for different data or model scales. We introduce the Rate-Adaptive VQ-VAE (RAQ-VAE) framework, which addresses this challenge with two novel codebook representation methods: a model-based approach using a clustering-based technique on an existing well-trained VQ-VAE model, and a data-driven approach utilizing a sequence-to-sequence (Seq2Seq) model for variable-rate codebook generation. Our experiments demonstrate that RAQ-VAE achieves effective reconstruction performance across multiple rates, often outperforming conventional fixed-rate VQ-VAE models. This work enhances the adaptability and performance of VQ-VAEs, with broad applications in data reconstruction, generation, and computer vision tasks.
 
 
+### Notice
+
+The code provided here corresponds to the version used in the paper submitted in May. Please note that this version is not fully optimized and may still contain bugs or incomplete features. While it is functional and should work as described in the paper, it may require additional debugging or refinement for specific use cases.
+
+We recommend using this code for reference or research purposes, but please proceed with caution if you plan to use it for production-level applications. Contributions and suggestions for improvements are always welcome.
+
+If you have any questions, feel free to contact me at **jeewan0516@kaist.ac.kr**.
+
 
 ## Requirements
 
