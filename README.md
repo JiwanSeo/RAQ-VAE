@@ -1,10 +1,10 @@
 # RAQ-VAE
-This repository contains the official PyTorch/Pytorch-Lightning implementation of **"RAQ-VAE: Rate-Adaptive Vector-Quantized Variational Autoencoder"** [1].
+This repository contains the official PyTorch/Pytorch-Lightning implementation of **"RAQ-VAE: Rate-Adaptive Vector-Quantized Variational Autoencoder"** [1](https://arxiv.org/abs/2405.14222).
 
-> **Abstract:**   Vector Quantized Variational AutoEncoder (VQ-VAE) is an established technique in machine learning for learning discrete representations across various modalities. However, its scalability and applicability are limited by the need to retrain the model to adjust the codebook for different data or model scales. We introduce the Rate-Adaptive VQ-VAE (RAQ-VAE) framework, which addresses this challenge with two novel codebook representation methods: a model-based approach using a clustering-based technique on an existing well-trained VQ-VAE model, and a data-driven approach utilizing a sequence-to-sequence (Seq2Seq) model for variable-rate codebook generation. Our experiments demonstrate that RAQ-VAE achieves effective reconstruction performance across multiple rates, often outperforming conventional fixed-rate VQ-VAE models. This work enhances the adaptability and performance of VQ-VAEs, with broad applications in data reconstruction, generation, and computer vision tasks.
+---
 
-
-### Notice
++
+## Notice
 
 The code provided here corresponds to the version used in the paper submitted in May. Please note that this version is not fully optimized and may still contain bugs or incomplete features. While it is functional and should work as described in the paper, it may require additional debugging or refinement for specific use cases.
 
@@ -12,6 +12,16 @@ We recommend using this code for reference or research purposes, but please proc
 
 If you have any questions, feel free to contact me at **jeewan0516@kaist.ac.kr**.
 
+
+## Architectures and Hyperparameters
+
+The model architecture in this code is based on the conventional VQ-VAE framework outlined in the original VQ-VAE paper (van den Oord et al., 2017), with reference to the VQ-VAE-2 implementations available [here](https://github.com/mattiasxu/VQVAE-2), [here](https://github.com/rosinality/vq-vae-2-pytorch), and [here](https://github.com/EugenHotaj/pytorch-generative). We have used ConvResNets from these repositories, which consist of convolutional layers, transpose convolutional layers, and ResBlocks. 
+
+Experiments were conducted on two setups: a server with 4 RTX 4090 GPUs and a machine with 2 RTX 3090 GPUs. The model implementation and training were done using PyTorch (Paszke et al., 2019), PyTorch Lightning (Falcon et al., 2019), and the AdamW optimizer (Loshchilov and Hutter, 2019). Evaluation metrics such as the Structural Similarity Index (SSIM) and Frechet Inception Distance (FID) were computed using the [pytorch-msssim](https://github.com/VainF/pytorch-msssim) and [pytorch-fid](https://github.com/mseitzer/pytorch-fid) libraries, respectively. For further details, please refer to the parameters shown in a table of the paper.
+
+RAQ-VAEs are constructed based on the described VQ-VAE parameters, with additional consideration of each parameter for adaptation.
+
+---
 
 ## Requirements
 
