@@ -8,7 +8,7 @@ If you have any questions, feel free to contact me at **jeewan0516@kaist.ac.kr**
 
 
 # RAQ
-This repository contains the official PyTorch/Pytorch-Lightning implementation of **"Rate-Adaptive Quantization: A Multi-Rate Codebook Adaptation for Vector Quantization-based Generative Models".
+This repository contains the official PyTorch/Pytorch-Lightning implementation of **"Rate-Adaptive Quantization: A Multi-Rate Codebook Adaptation for Vector Quantization-based Generative Models".**
 
 
 ## Architectures and Hyperparameters
