@@ -1,8 +1,3 @@
-# RAQ-VAE
-This repository contains the official PyTorch/Pytorch-Lightning implementation of **"RAQ-VAE: Rate-Adaptive Vector-Quantized Variational Autoencoder"** [[arXiv](https://arxiv.org/abs/2405.14222)].
-
-
-
 ## Notice
 
 The code provided here corresponds to the version used in the paper submitted in May. Please note that this version is not fully optimized and may still contain bugs or incomplete features. While it is functional and should work as described in the paper, it may require additional debugging or refinement for specific use cases.
@@ -12,15 +7,17 @@ We recommend using this code for reference or research purposes, but please proc
 If you have any questions, feel free to contact me at **jeewan0516@kaist.ac.kr**.
 
 
+# RAQ
+This repository contains the official PyTorch/Pytorch-Lightning implementation of **"Rate-Adaptive Quantization: A Multi-Rate Codebook Adaptation for Vector Quantization-based Generative Models".
+
 
 ## Architectures and Hyperparameters
 
-The model architecture in this code is based on the conventional VQ-VAE framework outlined in the original VQ-VAE paper (van den Oord et al., 2017), with reference to the VQ-VAE-2 implementations available [here](https://github.com/mattiasxu/VQVAE-2), [here](https://github.com/rosinality/vq-vae-2-pytorch), and [here](https://github.com/EugenHotaj/pytorch-generative). We have used ConvResNets from these repositories, which consist of convolutional layers, transpose convolutional layers, and ResBlocks. 
+The model architecture in this code is based on the conventional VQ-VAE framework outlined in the original VQ-VAE paper (van den Oord et al., 2017), with reference to the VQ-VAE-2 implementations available [here](https://github.com/mattiasxu/VQVAE-2), [here](https://github.com/rosinality/vq-vae-2-pytorch), and [here](https://github.com/EugenHotaj/pytorch-generative). We have used ConvResNets from these repositories, which consist of convolutional layers, transpose convolutional layers, and ResBlocks.
 
 Experiments were conducted on two setups: a server with 4 RTX 4090 GPUs and a machine with 2 RTX 3090 GPUs. The model implementation and training were done using PyTorch (Paszke et al., 2019), PyTorch Lightning (Falcon et al., 2019), and the AdamW optimizer (Loshchilov and Hutter, 2019). Evaluation metrics such as the Structural Similarity Index (SSIM) and Frechet Inception Distance (FID) were computed using the [pytorch-msssim](https://github.com/VainF/pytorch-msssim) and [pytorch-fid](https://github.com/mseitzer/pytorch-fid) libraries, respectively. For further details, please refer to the parameters shown in a table of the paper.
 
-RAQ-VAEs are constructed based on the described VQ-VAE parameters, with additional consideration of each parameter for adaptation.
-
+RAQs are constructed based on the described VQ-VAE parameters, with additional consideration of each parameter for adaptation.
 
 
 ## Requirements
@@ -32,14 +29,17 @@ Use the requirements.txt file to install all the necessary dependencies:
     pip install -r requirements.txt
 
 
-
 ## Trainig
 
 Once you have set up your environment, you can run the training script. Below is an example of how to execute the script with specific arguments.
 
-#### Exapmple command: Model-based RAQ-VAE / baseline model: VQ-VAE-2
+#### Exapmple command: RAQ / baseline model: VQ-VAE-2
 
-    python main.py --dataset CelebA --raq_type mb --model_type vqvae2 --n_epochs 100 --seed 10 --cuda_ind 
+    python main.py --dataset CelebA --raq_type dd --model_type vqvae2 --n_epochs 100 --seed 10 --cuda_ind 0
+
+#### Exapmple command: Model-based RAQ / baseline model: VQ-VAE-2
+
+    python main.py --dataset CelebA --raq_type mb --model_type vqvae2 --n_epochs 100 --seed 10 --cuda_ind 0
 
 - Make sure your dataset paths specified in args.py are correct.
 - Adjust the batch size and other hyperparameters in args.py as needed.
@@ -51,9 +51,14 @@ Once you have set up your environment, you can run the training script. Below is
 
 After training the model, you can evaluate it using the test.py script. Below is an example command to run the evaluation:
 
-#### Exapmple command: Model-based RAQ-VAE / baseline model: VQ-VAE-2
 
-    python test.py --dataset CelebA --raq_type mb --model_type vqvae2 --seed 10 --cuda_ind 0
+#### Exapmple command: RAQ / baseline model: VQ-VAE-2
+
+    python test.py --dataset CelebA --raq_type dd --model_type vqvae2 --seed 10 --cuda_ind 0 --num_embeddings_test 1024
+
+#### Exapmple command: Model-based RAQ / baseline model: VQ-VAE-2
+
+    python test.py --dataset CelebA --raq_type mb --model_type vqvae2 --seed 10 --cuda_ind 0  --cluster_target 64
 
 The evaluation script relies on the checkpoint saved during training. Make sure the path specified in the script matches the location of your checkpoint.
 
@@ -106,7 +111,16 @@ The evaluation script relies on the checkpoint saved during training. Make sure 
 - `--cuda_ind` (int): Index of the CUDA device to use.
   - Default: `0`
 
-### Model-based RAQ-VAE Options
+### RAQ Options
+
+- `--num_embeddings_min` (int): Minimum vocabulary size.
+  - Default: `32`
+- `--num_embeddings_max` (int): Maximum vocabulary size.
+  - Default: `2048`
+- `--num_embeddings_test` (int): Vocabulary size for testing.
+  - Default: `512`
+
+### Model-based RAQ Options
 
 - `--cluster_target` (int): Target number of clusters for codebook clustering.
   - Default: `512`
@@ -117,20 +131,16 @@ The evaluation script relies on the checkpoint saved during training. Make sure 
 - `--temp` (float): Softmax temperature for DKM.
   - Default: `1e-2`
 
-### Data-driven RAQ-VAE Options
-
-- `--num_embeddings_min` (int): Minimum vocabulary size.
-  - Default: `32`
-- `--num_embeddings_max` (int): Maximum vocabulary size.
-  - Default: `2048`
-- `--num_embeddings_test` (int): Vocabulary size for testing.
-  - Default: `512`
 
 ### Directory for FID evaluation
 
 - `--img_dir` (str): Directory to save images for FID calculation.
   - Default: `imgs/`
 
+
+
+
+---
 
 
 
