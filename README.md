@@ -147,7 +147,7 @@ The evaluation script relies on the checkpoint saved during training. Make sure 
 ---
 
 ## Citation
-[1] Seo, Jiwan, and Joonhyuk Kang. "RAQ-VAE: Rate-Adaptive Vector-Quantized Variational Autoencoder." arXiv preprint arXiv:2405.14222 (2024).
+[1] Seo, Jiwan, and Joonhyuk Kang. "Rate-Adaptive Quantization: A Multi-Rate Codebook Adaptation for Vector Quantization-based Generative Models." arXiv preprint arXiv:2405.14222 (2024).
 
 ```
 # bibtex
