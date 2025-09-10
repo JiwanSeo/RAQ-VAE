@@ -150,10 +150,9 @@ The evaluation script relies on the checkpoint saved during training. Make sure 
 [1] Jiwan Seo, and Joonhyuk Kang. "Rate-Adaptive Quantization: A Multi-Rate Codebook Adaptation for Vector Quantization-based Generative Models." arXiv preprint arXiv:2405.14222 (2024).
 
 ```
-# bibtex
-@article{seo2024raq,
-  title={Rate-Adaptive Quantization: A Multi-Rate Codebook Adaptation for Vector Quantization-based Generative Models},
-  author={Jiwan Seo and Kang, Joonhyuk},
+@article{seo2024rate,
+  title={Rate-adaptive quantization: A multi-rate codebook adaptation for vector quantization-based generative models},
+  author={Seo, Jiwan and Kang, Joonhyuk},
   journal={arXiv preprint arXiv:2405.14222},
   year={2024}
 }
